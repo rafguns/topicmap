@@ -6,17 +6,17 @@ from .topics import umap_reduce_embeddings
 
 
 def to_nx_graph(df_topics, topic_model=None, attrs=None):
-    G = nx.Graph()
+    graph = nx.Graph()
 
     # Add nodes with attributes
     if attrs is None:
         attrs = ["x", "y", "count", "description"]
     for _, row in df_topics.iterrows():
-        G.add_node(row["short_label"], **{attr: row[attr] for attr in attrs})
+        graph.add_node(row["short_label"], **{attr: row[attr] for attr in attrs})
 
     if topic_model is None:
         # Return graph without edges
-        return G
+        return graph
 
     # Determine edge weights
     embeddings = topic_model.c_tf_idf_.toarray()
@@ -25,13 +25,13 @@ def to_nx_graph(df_topics, topic_model=None, attrs=None):
     coocc = embeddings @ embeddings.T
 
     # Add edges
-    edges = ((u, v) for u, v in zip(*coocc.nonzero()))
+    edges = ((u, v) for u, v in zip(*coocc.nonzero(), strict=True))
     triples = (
         (sorted_topics[u], sorted_topics[v], {"weight": coocc[u, v]}) for u, v in edges
     )
-    G.add_edges_from(triples)
+    graph.add_edges_from(triples)
 
-    return G
+    return graph
 
 
 def write_project_map(embeddings, df_proj, df_topics, fname):

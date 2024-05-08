@@ -30,7 +30,7 @@ def openai_client():
         with open("apikey.txt") as fh:
             api_key = fh.read().strip()
         client = openai.OpenAI(api_key=api_key)
-        setattr(openai_client, "client", client)
+        openai_client.client = client
     return openai_client.client
 
 
@@ -50,7 +50,7 @@ Start each summary with "This cluster of papers".
 Format the output in JSON.
 
 The titles are:
-"""
+"""  # noqa: E501
 
 
 @memory.cache(ignore=["client"])
@@ -112,10 +112,10 @@ class Dimensionality:
     def __init__(self, reduced_embeddings):
         self.reduced_embeddings = reduced_embeddings
 
-    def fit(self, X):
+    def fit(self, x):  # noqa: ARG002 (unused argument)
         return self
 
-    def transform(self, X):
+    def transform(self, x):  # noqa: ARG002 (unused argument)
         return self.reduced_embeddings
 
 
@@ -123,6 +123,7 @@ def load_topic_model(
     documents,
     cluster_name,
     embedding_model_name,
+    *,
     stop_words=None,
     from_cache=True,
     min_word_frequency=1,
@@ -152,7 +153,6 @@ def load_topic_model(
     vocab = [
         word for word, frequency in vocab.items() if frequency >= min_word_frequency
     ]
-    print("Vocabulary size:", len(vocab))
 
     # Prepare sub-models
     embedding_model = SentenceTransformer(embedding_model_name)
@@ -247,8 +247,8 @@ def plot_map(
     plot_kwargs = {"x": "x", "y": "y", "alpha": 0.6, "s": 10}
     plot_kwargs.update(kwargs)
     sns.scatterplot(data=df, hue=hue, ax=ax, **plot_kwargs)
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
+    ax.get_xaxis().set_visible(False)  # noqa: FBT003
+    ax.get_yaxis().set_visible(False)  # noqa: FBT003
     plt.tight_layout()
 
     if filename:
@@ -264,7 +264,9 @@ def plot_map_highlight_clusters(
 ):
     df_tmp = df.copy()
 
-    cluster_dict = dict(zip(clusters, map(str, range(1, len(clusters) + 1))))
+    cluster_dict = dict(
+        zip(clusters, map(str, range(1, len(clusters) + 1)), strict=True)
+    )
     df_tmp["highlight"] = df_tmp.Topic.apply(lambda x: cluster_dict.get(x, "0"))
 
     palette = sns.color_palette()
@@ -290,7 +292,8 @@ def label_topics(
     labels_json = {}
     for topic in track(tmp.Topic.unique(), "Getting topic labels..."):
         tmp_topic = tmp[tmp.Topic == topic]
-        # We use max # of titles per topic: the representative ones and a sample of the rest
+        # We use max number of titles per topic:
+        # the representative ones and a sample of the rest
         titles = list(tmp_topic.loc[tmp_topic.Representative_document, "title"])
         titles += list(
             tmp_topic.loc[~tmp_topic.Representative_document, "title"].sample(
