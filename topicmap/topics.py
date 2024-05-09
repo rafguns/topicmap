@@ -9,7 +9,6 @@ import openai
 import pandas as pd
 import seaborn as sns
 import umap
-import vabb
 from bertopic import BERTopic
 from nltk.corpus import stopwords
 from rich.progress import track
@@ -18,7 +17,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 
-memory = joblib.Memory("cache", verbose=0)
+memory = joblib.Memory(".cache", verbose=0)
 
 
 def openai_client():
@@ -308,7 +307,7 @@ def label_topics(
     # Transform into dataframe
     json_data = pd.Series(labels_json, name="labels_json").sort_index()
     labels = pd.json_normalize(json_data)
-    labels.columns = vabb.clean_column_names(labels.columns)
+    labels.columns = [col.lower().replace(" ", "_") for col in labels.columns]
 
     return labels
 
