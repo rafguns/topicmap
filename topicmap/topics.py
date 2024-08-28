@@ -130,7 +130,7 @@ def load_topic_model(
 ):
     # Precalculate and cache embeddings
     # Note: I did this on Google Colab, which was about 20x times faster.
-    model_cachedir = f"cache/{cluster_name}/{embedding_model_name}"
+    model_cachedir = f".cache/{cluster_name}/{embedding_model_name}"
     embeddings = sentence_transformer_embeddings(documents, embedding_model_name)
     reduced_embeddings = umap_reduce_embeddings(embeddings)
 
