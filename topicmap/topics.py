@@ -53,10 +53,12 @@ The titles are:
 
 
 @memory.cache(ignore=["client"])
-def chatgpt_data_from_titles(titles: str, client: openai.OpenAI | None = None) -> str:
+def chatgpt_data_from_titles(
+    titles: str, client: openai.OpenAI | None = None, model="gpt-4o-mini"
+) -> str:
     client = client or openai_client()
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model=model,
         messages=[
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": prompt + titles},
