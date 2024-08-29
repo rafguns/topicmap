@@ -5,14 +5,16 @@ from sklearn.preprocessing import MinMaxScaler
 from .topics import umap_reduce_embeddings
 
 
-def to_nx_graph(df_topics, topic_model=None, attrs=None):
+def to_nx_graph(
+    df_topics, topic_model=None, attrs=None, label_col="short_label", topic_col="Topic"
+):
     graph = nx.Graph()
 
     # Add nodes with attributes
     if attrs is None:
         attrs = ["x", "y", "count", "description"]
     for _, row in df_topics.iterrows():
-        graph.add_node(row["short_label"], **{attr: row[attr] for attr in attrs})
+        graph.add_node(row[label_col], **{attr: row[attr] for attr in attrs})
 
     if topic_model is None:
         # Return graph without edges
@@ -21,7 +23,7 @@ def to_nx_graph(df_topics, topic_model=None, attrs=None):
     # Determine edge weights
     embeddings = topic_model.c_tf_idf_.toarray()
     embeddings = MinMaxScaler().fit_transform(embeddings)
-    sorted_topics = df_topics.sort_values(by="topic")["short_label"]
+    sorted_topics = df_topics.sort_values(by=topic_col)[label_col]
     coocc = embeddings @ embeddings.T
 
     # Add edges
