@@ -211,7 +211,7 @@ def topic_coordinates(topic_model, embedding_base="topic_embeddings"):
             embeddings = topic_model.c_tf_idf_.toarray()
             embeddings = MinMaxScaler().fit_transform(embeddings)
             embeddings = umap.UMAP(
-                n_neighbors=3, n_components=2, metric="hellinger", random_state=42
+                n_neighbors=10, n_components=2, metric="hellinger", random_state=42
             ).fit_transform(embeddings)
         case _:
             msg = (
