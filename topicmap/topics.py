@@ -39,10 +39,10 @@ Titles may be in different languages.
 
 Your task is to identify the topic of the entire cluster based on the titles of the representative papers.
 
-Output the following items (in English) that describe the topic of the cluster: 'short label'
-(at most 3 words and format in Title Case), 'long label' (at most 8 words and format in Title Case),
+Output the following items (in English) that describe the topic of the cluster: 'short_label'
+(at most 3 words and format in Title Case), 'long_label' (at most 8 words and format in Title Case),
 list of 10 'keywords' (ordered by relevance and format in Title Case), 'summary' (few sentences),
-and 'wikipedia page' (URL).
+and 'wikipedia_page' (URL).
 Do not start short and long labels with the word "The".
 Do not use the word 'Cluster' in short or long labels.
 Start each summary with "This cluster of papers".
@@ -55,7 +55,7 @@ The titles are:
 @memory.cache(ignore=["client"])
 def chatgpt_data_from_titles(
     titles: str, client: openai.OpenAI | None = None, model="gpt-4o-mini"
-) -> str:
+) -> dict:
     client = client or openai_client()
     response = client.chat.completions.create(
         model=model,
@@ -65,7 +65,8 @@ def chatgpt_data_from_titles(
         ],
         response_format={"type": "json_object"},
     )
-    return response.choices[0].message.content
+    data = json.loads(response.choices[0].message.content)
+    return {key.lower().replace(" ", "_"): val for key, val in data.items()}
 
 
 def stop_word_list(languages=None):
@@ -281,37 +282,34 @@ def plot_map_highlight_clusters(
     )
 
 
-def label_topics(
-    df_projects, topic_model, documents, max_num_titles=100, random_state=42
-):
-    # Link each project to its topic
-    tmp = df_projects.reset_index(drop=True).merge(
-        topic_model.get_document_info(documents), left_index=True, right_index=True
-    )
+def label_topics(topic_model, documents, titles, max_num_titles=100, random_state=42):
+    # Link each document title to its topic
+    df_titles_all = topic_model.get_document_info(documents).assign(title=titles)
 
     # Per topic, compile list of titles and label with ChatGPT
     labels_json = {}
-    for topic in track(tmp.Topic.unique(), "Getting topic labels..."):
-        tmp_topic = tmp[tmp.Topic == topic]
+    for topic in track(df_titles_all.Topic.unique(), "Getting topic labels..."):
+        df_titles_topic = df_titles_all[df_titles_all.Topic == topic]
         # We use max number of titles per topic:
         # the representative ones and a sample of the rest
-        titles = list(tmp_topic.loc[tmp_topic.Representative_document, "title"])
+        titles = list(
+            df_titles_topic.loc[df_titles_topic.Representative_document, "title"]
+        )
         titles += list(
-            tmp_topic.loc[~tmp_topic.Representative_document, "title"].sample(
-                min(max_num_titles, len(tmp_topic)) - len(titles),
+            df_titles_topic.loc[
+                ~df_titles_topic.Representative_document, "title"
+            ].sample(
+                min(max_num_titles, len(df_titles_topic)) - len(titles),
                 random_state=random_state,
             )
         )
-        labels_json[topic] = json.loads(
-            chatgpt_data_from_titles("\n".join(f"- {title}" for title in titles))
+        labels_json[topic] = chatgpt_data_from_titles(
+            "\n".join(f"- {title}" for title in titles)
         )
 
     # Transform into dataframe
     json_data = pd.Series(labels_json, name="labels_json").sort_index()
-    labels = pd.json_normalize(json_data)
-    labels.columns = [col.lower().replace(" ", "_") for col in labels.columns]
-
-    return labels
+    return pd.json_normalize(json_data)
 
 
 @memory.cache
