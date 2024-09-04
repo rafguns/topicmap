@@ -146,15 +146,7 @@ def load_topic_model(
         topic_model._save_representative_docs(df_docs.drop("Representation", axis=1))
         return topic_model, embeddings
 
-    # Extract vocab to be used in BERTopic
-    stop_words = stop_words or stop_word_list()
-    vocab = collections.Counter()
-    analyzer = CountVectorizer(stop_words=stop_words).build_analyzer()
-    for doc in documents:
-        vocab.update(analyzer(doc.lower()))
-    vocab = [
-        word for word, frequency in vocab.items() if frequency >= min_word_frequency
-    ]
+    stop_words, vocab = extract_vocabulary(documents, stop_words, min_word_frequency)
 
     # Prepare sub-models
     embedding_model = SentenceTransformer(embedding_model_name)
@@ -196,6 +188,19 @@ def load_topic_model(
         save_embedding_model=embedding_model_name,
     )
     return topic_model, embeddings
+
+
+def extract_vocabulary(documents, stop_words, min_word_frequency):
+    stop_words = stop_words or stop_word_list()
+    vocab = collections.Counter()
+    analyzer = CountVectorizer(stop_words=stop_words).build_analyzer()
+    for doc in documents:
+        vocab.update(analyzer(doc.lower()))
+    vocab = [
+        word for word, frequency in vocab.items() if frequency >= min_word_frequency
+    ]
+
+    return stop_words, vocab
 
 
 def topic_coordinates(topic_model, embedding_base="topic_embeddings"):
