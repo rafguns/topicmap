@@ -204,6 +204,7 @@ def extract_vocabulary(documents, stop_words, min_word_frequency):
     return stop_words, vocab
 
 
+@memory.cache
 def topic_coordinates(topic_model, embedding_base="topic_embeddings"):
     """Determine x and y coordinates for topics
 
