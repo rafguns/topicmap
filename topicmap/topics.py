@@ -1,5 +1,6 @@
 import collections
 import json
+from pathlib import Path
 
 import hdbscan
 import joblib
@@ -137,7 +138,7 @@ def load_topic_model(
     embeddings = sentence_transformer_embeddings(documents, embedding_model_name)
     reduced_embeddings = umap_reduce_embeddings(embeddings)
 
-    if from_cache:
+    if from_cache and Path(model_cachedir).exists():
         topic_model = BERTopic.load(
             model_cachedir, embedding_model=embedding_model_name
         )
